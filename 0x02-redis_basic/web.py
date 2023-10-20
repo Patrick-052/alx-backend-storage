@@ -8,7 +8,7 @@ from functools import wraps
 from typing import Callable
 
 
-def count_requests(method: Callable) -> Callable:
+def count_requests(method):
     """ Count the number a request is made """
 
     @wraps(method)
@@ -16,11 +16,14 @@ def count_requests(method: Callable) -> Callable:
         """ wrapper function to count the number
         of requests with key count as an expiry key """
         r = redis.Redis()
-        count = f"count:{url}"
-        r.incr(count)
-
-        page = method(url)
         cached = f"cached:{url}"
+        if r.get(cached):
+            return r.get(cached).decode('utf-8')
+
+        count = f"count:{url}"
+        page = method(url)
+
+        r.incr(count)
         r.setex(cached, 10, page)
         return page
 
