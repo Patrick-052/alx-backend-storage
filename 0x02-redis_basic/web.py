@@ -32,5 +32,5 @@ def count_requests(method):
 @count_requests
 def get_page(url: str) -> str:
     """ Function that returns the HTML content of a URL """
-    req = requests.get(url)
-    return req.text
+    res = requests.get(url)
+    return res.text
