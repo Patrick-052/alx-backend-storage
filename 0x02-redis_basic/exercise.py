@@ -7,6 +7,26 @@ from typing import Union, Callable, Optional
 from functools import wraps
 
 
+def call_history(method: Callable) -> Callable:
+    """ Storing method's args in a list and returning
+        the args from an output list
+        Process:
+           - Retrieve method name
+           - Append args to a redis list
+           - Return list of arg's values from redis db """
+    key = method.__qualname__
+
+    @wraps(method)
+    def wrapper(self, *args):
+        """ wrapper function to store method args in a list
+        and return the arg's values in a list """
+        self._redis.rpush(f"{key}:inputs", str(args))
+        output = method(self, *args)
+        self._redis.rpush(f"{key}:outputs", output)
+        return output
+    return wrapper
+
+
 def count_calls(method: Callable) -> Callable:
     """ Count the number of times a method is called.
         Process:
@@ -33,6 +53,7 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @call_history
     @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """ Takes a data argument and returns a string. """
