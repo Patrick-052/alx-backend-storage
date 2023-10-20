@@ -14,9 +14,9 @@ This project is about Redis, a key-value store that is used as a database, cache
 - [Redis Crash Course Tutorial](https://www.youtube.com/watch?v=Hbt56gFj998)
 
 ## Requirements
-$ sudo apt-get -y install redis-server
-$ pip3 install redis
-$ sed -i "s/bind .*/bind 127.0.0.1/g" /etc/redis/redis.conf
+- sudo apt-get -y install redis-server
+- pip3 install redis
+- sed -i "s/bind .*/bind 127.0.0.1/g" /etc/redis/redis.conf
 
 
                       ____   _  _____ ____  ___ ____ _  __
