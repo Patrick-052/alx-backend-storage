@@ -3,8 +3,8 @@
 
 import redis
 from uuid import uuid4
-from typing import Union, Callable, Optional
 from functools import wraps
+from typing import Union, Callable, Optional
 
 
 def call_history(method: Callable) -> Callable:
@@ -24,6 +24,7 @@ def call_history(method: Callable) -> Callable:
         output = method(self, *args)
         self._redis.rpush(f"{key}:outputs", output)
         return output
+
     return wrapper
 
 
@@ -42,7 +43,28 @@ def count_calls(method: Callable) -> Callable:
         redis db and return it. """
         self._redis.incr(key)
         return method(self, *args, **kwargs)
+
     return wrapper
+
+
+def replay(method: Callable) -> None:
+    """ Displaying history of calls of a particular function
+        Process:
+           - Retrieve method name
+           - Retrieve method count from redis db (key count)
+           - Retrieve method inputs and outputs from redis db
+           - Print out the history of calls
+    """
+    r = redis.Redis()
+    key = method.__qualname__
+    count = r.get(key).decode('utf-8')
+    inputs = r.lrange(f"{key}:inputs", 0, -1)
+    outputs = r.lrange(f"{key}:outputs", 0, -1)
+
+    print(f"{key} was called {count} times:")
+    zipped = zip(inputs, outputs)
+    for i, o in zipped:
+        print(f"{key}(*{i.decode('utf-8')}) -> {o.decode('utf-8')}")
 
 
 class Cache:
@@ -53,8 +75,8 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
-    @call_history
     @count_calls
+    @call_history
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """ Takes a data argument and returns a string. """
         key = str(uuid4())
@@ -84,3 +106,11 @@ class Cache:
         except Exception:
             dint = 0
         return dint
+
+
+if __name__ == "__main__":
+    cache = Cache()
+    cache.store("foo")
+    cache.store("bar")
+    cache.store(42)
+    replay(cache.store)
