@@ -18,8 +18,11 @@ def count_requests(method: Callable) -> Callable:
         r = redis.Redis()
         count = f"count:{url}"
         r.incr(count)
-        r.expire(count, 10)
-        return method(url)
+
+        page = method(url)
+        cached = f"cached:{url}"
+        r.setex(cached, 10, page)
+        return page
 
     return wrapper
 
