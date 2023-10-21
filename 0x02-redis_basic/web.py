@@ -5,11 +5,12 @@
 import redis
 import requests
 from functools import wraps
+from typing import Callable
 
 r = redis.Redis()
 
 
-def count_requests(method):
+def count_requests(method: Callable) -> Callable:
     """ Count the number a request is made """
     @wraps(method)
     def wrapper(url):
