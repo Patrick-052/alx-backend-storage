@@ -11,6 +11,7 @@ from typing import Callable
 
 def access_count(get_page: Callable[[str], str]) -> Callable[[str], str]:
     """Track calls to `get_page` with a particular url """
+
     @wraps(get_page)
     def wrapper(url: str) -> str:
         key = f"count:{url}"
@@ -18,6 +19,7 @@ def access_count(get_page: Callable[[str], str]) -> Callable[[str], str]:
         store.incr(key)
         store.expire(key, 10)
         return get_page(url)
+
     return wrapper
 
 
