@@ -1,37 +1,27 @@
 #!/usr/bin/env python3
-""" Module that contains implementation of scraping
-    and returning the results """
-
+"""
+This module defines the function `get_page` as well as a decorator for keeping
+track of calls to `get_page` with a particular url
+"""
 import redis
 import requests
 from functools import wraps
 from typing import Callable
 
-r = redis.Redis()
 
-
-def count_requests(method: Callable) -> Callable:
-    """ Count the number a request is made """
-    @wraps(method)
-    def wrapper(url):
-        """ wrapper function to count the number
-        of requests with key count as an expiry key """
-        cached = f"cached:{url}"
-        if r.get(cached):
-            return r.get(cached).decode('utf-8')
-
-        count = f"count:{url}"
-        page = method(url)
-
-        r.incr(count)
-        r.setex(cached, 10, page)
-        return page
-
+def access_count(get_page: Callable[[str], str]) -> Callable[[str], str]:
+    """Track calls to `get_page` with a particular url """
+    @wraps(get_page)
+    def wrapper(url: str) -> str:
+        key = f"count:{url}"
+        store = redis.Redis()
+        store.incr(key)
+        store.expire(key, 10)
+        return get_page(url)
     return wrapper
 
 
-@count_requests
+@access_count
 def get_page(url: str) -> str:
-    """ Function that returns the HTML content of a URL """
-    res = requests.get(url)
-    return res.text
+    """Obtain and return the HTML content of a particular URL, `url` """
+    return requests.get(url).text
