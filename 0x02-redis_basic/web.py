@@ -1,36 +1,38 @@
 #!/usr/bin/env python3
-"""
-web cache and tracker
-"""
-import requests
+""" Module that contains implementation of scraping
+    and returning the results """
+
 import redis
+import requests
 from functools import wraps
+from typing import Callable
 
-store = redis.Redis()
+r = redis.Redis()
 
 
-def count_url_access(method):
-    """ Decorator counting how many times
-    a URL is accessed """
+def count_requests(method: Callable[[str], str]) -> Callable[[str], str]:
+    """ Count the number a request is made """
+
     @wraps(method)
     def wrapper(url):
-        cached_key = "cached:" + url
-        cached_data = store.get(cached_key)
-        if cached_data:
-            return cached_data.decode("utf-8")
+        """ wrapper function to count the number
+        of requests with key count as an expiry key """
+        cached = f"cached:{url}"
+        if r.get(cached):
+            return r.get(cached).decode('utf-8')
 
-        count_key = "count:" + url
-        html = method(url)
+        count = f"count:{url}"
+        page = method(url)
 
-        store.incr(count_key)
-        store.set(cached_key, html)
-        store.expire(cached_key, 10)
-        return html
+        r.incr(count)
+        r.setex(cached, 10, page)
+        return page
+
     return wrapper
 
 
-@count_url_access
+@count_requests
 def get_page(url: str) -> str:
-    """ Returns HTML content of a url """
+    """ Function that returns the HTML content of a URL """
     res = requests.get(url)
     return res.text
