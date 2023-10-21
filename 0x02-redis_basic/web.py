@@ -1,29 +1,36 @@
 #!/usr/bin/env python3
 """
-This module defines the function `get_page` as well as a decorator for keeping
-track of calls to `get_page` with a particular url
+web cache and tracker
 """
-import redis
 import requests
+import redis
 from functools import wraps
-from typing import Callable
+
+store = redis.Redis()
 
 
-def access_count(get_page: Callable[[str], str]) -> Callable[[str], str]:
-    """Track calls to `get_page` with a particular url """
+def count_url_access(method):
+    """ Decorator counting how many times
+    a URL is accessed """
+    @wraps(method)
+    def wrapper(url):
+        cached_key = "cached:" + url
+        cached_data = store.get(cached_key)
+        if cached_data:
+            return cached_data.decode("utf-8")
 
-    @wraps(get_page)
-    def wrapper(url: str) -> str:
-        key = f"count:{url}"
-        store = redis.Redis()
-        store.incr(key)
-        store.expire(key, 10)
-        return get_page(url)
+        count_key = "count:" + url
+        html = method(url)
 
+        store.incr(count_key)
+        store.set(cached_key, html)
+        store.expire(cached_key, 10)
+        return html
     return wrapper
 
 
-@access_count
+@count_url_access
 def get_page(url: str) -> str:
-    """Obtain and return the HTML content of a particular URL, `url` """
-    return requests.get(url).text
+    """ Returns HTML content of a url """
+    res = requests.get(url)
+    return res.text
