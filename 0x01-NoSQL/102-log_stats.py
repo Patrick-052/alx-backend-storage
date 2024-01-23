@@ -27,4 +27,4 @@ if __name__ == "__main__":
     for doc in ip_counts:
         doc_ip = doc.get("ip")
         doc_count = doc.get("count")
-        print(f"{doc_ip}: {doc_count}")
+        print(f"\t{doc_ip}: {doc_count}")
