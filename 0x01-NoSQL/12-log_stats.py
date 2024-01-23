@@ -10,9 +10,9 @@ def nginx_logs(mongo_collection):
     print(f"{mongo_collection.estimated_document_count()} logs")
     print("Methods:")
     for i in methods:
-        print(
-            f"\tmethod {i}: {mongo_collection.count_documents({'method': i})}"
-        )
+        count = mongo_collection.count_documents({'method': i})
+        print(f"\tmethod {i}: {count}")
+
     print(f"{mongo_collection.count_documents({'path': '/status'})}" +
           " status check")
 
