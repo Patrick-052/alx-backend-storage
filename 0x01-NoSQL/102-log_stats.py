@@ -25,4 +25,6 @@ if __name__ == "__main__":
         {"$project": {"_id": 0, "ip": "$_id", "count": 1}}
     ])
     for doc in ip_counts:
-        print(f"{doc['_id']}: {doc['count']}")
+        doc_ip = doc.get("ip")
+        doc_count = doc.get("count")
+        print(f"{doc_ip}: {doc_count}")
